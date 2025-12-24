@@ -54,7 +54,7 @@
     }
   },
   "modelSelector": {
-    "welcome": "Benvenuto in Handy!",
+    "welcome": "Benvenuto in Insero!",
     "downloadPrompt": "Scarica un modello per cominciare a trascrivere.",
     "availableModels": "Modelli Disponibili",
     "downloadModels": "Scarica Modelli",
@@ -80,7 +80,7 @@
     "general": {
       "title": "Generale",
       "shortcut": {
-        "title": "Scorciatoie di Handy",
+        "title": "Scorciatoie di Insero",
         "description": "Configura le scorciatoie per attivare la trascrizione vocale",
         "loading": "Caricamento delle scorciatoie...",
         "none": "Nessuna scorciatoia configurata",
@@ -90,6 +90,14 @@
           "transcribe": {
             "name": "Trascrivi",
             "description": "Converti la tua voce in testo."
+          },
+          "transcribe_and_enhance": {
+            "name": "Trascrivi + Migliora",
+            "description": "Converte la voce in testo e lo migliora."
+          },
+          "transcribe_and_generate": {
+            "name": "Trascrivi + Genera",
+            "description": "Genera contenuto basato sulla trascrizione."
           },
           "cancel": {
             "name": "Annulla",
@@ -146,7 +154,7 @@
       },
       "autostart": {
         "label": "Avvia all'Accensione",
-        "description": "Avvia Handy automaticamente quando accedi al computer."
+        "description": "Avvia Insero automaticamente quando accedi al computer."
       },
       "overlay": {
         "title": "Posizione della Sovrimpressione",
@@ -283,7 +291,7 @@
       },
       "updateChecks": {
         "label": "Controlla aggiornamenti",
-        "description": "Controlla automaticamente la disponibilità di nuove versioni di Handy"
+        "description": "Controlla automaticamente la disponibilità di nuove versioni di Insero"
       },
       "soundTheme": {
         "label": "Tema Sonoro",
@@ -338,11 +346,11 @@
       "title": "Informazioni",
       "version": {
         "title": "Versione",
-        "description": "Versione attuale di Handy"
+        "description": "Versione attuale di Insero"
       },
       "appDataDirectory": {
         "title": "Cartella Dati App",
-        "description": "Cartella in cui Handy salva i dati"
+        "description": "Cartella in cui Insero salva i dati"
       },
       "sourceCode": {
         "title": "Codice Sorgente",
@@ -351,7 +359,7 @@
       },
       "supportDevelopment": {
         "title": "Supporta lo Sviluppo",
-        "description": "Aiutaci a sviluppare Handy",
+        "description": "Aiutaci a sviluppare Insero",
         "button": "Dona"
       },
       "acknowledgments": {
@@ -359,7 +367,7 @@
         "whisper": {
           "title": "Whisper.cpp",
           "description": "Inferenza ad alte prestazioni del modello di riconoscimento vocale automatico Whisper di OpenAI",
-          "details": "Handy usa Whisper.cpp per il riconoscimento vocale veloce in locale. Grazie a Georgi Gerganov e collaboratori per il fantastico lavoro."
+          "details": "Insero usa Whisper.cpp per il riconoscimento vocale veloce in locale. Grazie a Georgi Gerganov e collaboratori per il fantastico lavoro."
         }
       }
     }
@@ -402,7 +410,7 @@
   },
   "accessibility": {
     "permissionsRequired": "Richiesti Permessi di Accessibilità",
-    "permissionsDescription": "Handy ha bisogno dei permessi di accessibilità per digitare il testo trascritto.",
+    "permissionsDescription": "Insero ha bisogno dei permessi di accessibilità per digitare il testo trascritto.",
     "openSettings": "Apri Impostazioni di Sistema",
     "dismiss": "Ignora"
   },
@@ -411,9 +419,13 @@
   },
   "appLanguage": {
     "title": "Lingua Applicazione",
-    "description": "Cambia la lingua dell'interfaccia di Handy"
+    "description": "Cambia la lingua dell'interfaccia di Insero"
   },
   "overlay": {
-    "transcribing": "Trascrizione..."
+    "recording": "Registrazione...",
+    "transcribing": "Trascrizione...",
+    "improving": "Miglioramento...",
+    "generating": "Generazione...",
+    "translating": "Traduzione..."
   }
 }

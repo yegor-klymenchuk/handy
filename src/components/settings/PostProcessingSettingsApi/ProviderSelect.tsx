@@ -1,8 +1,15 @@
 import React from "react";
-import { Dropdown, type DropdownOption } from "../../ui/Dropdown";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../../ui/Select";
+import type { Option } from "@/lib/utils/option";
 
 interface ProviderSelectProps {
-  options: DropdownOption[];
+  options: Option[];
   value: string;
   onChange: (value: string) => void;
   disabled?: boolean;
@@ -11,13 +18,22 @@ interface ProviderSelectProps {
 export const ProviderSelect: React.FC<ProviderSelectProps> = React.memo(
   ({ options, value, onChange, disabled }) => {
     return (
-      <Dropdown
-        options={options}
-        selectedValue={value}
-        onSelect={onChange}
-        disabled={disabled}
-        className="flex-1"
-      />
+      <Select value={value} onValueChange={onChange} disabled={disabled}>
+        <SelectTrigger className="flex-1 min-w-[240px]">
+          <SelectValue placeholder="Select a provider..." />
+        </SelectTrigger>
+        <SelectContent>
+          {options.map((option) => (
+            <SelectItem
+              key={option.value}
+              value={option.value}
+              disabled={option.disabled}
+            >
+              {option.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
     );
   },
 );

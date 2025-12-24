@@ -1,16 +1,18 @@
 import { listen } from "@tauri-apps/api/event";
 import React, { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import {
-  MicrophoneIcon,
-  TranscriptionIcon,
-  CancelIcon,
-} from "../components/icons";
+import { TranscriptionIcon, CancelIcon } from "../components/icons";
 import "./RecordingOverlay.css";
 import { commands } from "@/bindings";
 import { syncLanguageFromSettings } from "@/i18n";
+import { Mic } from "lucide-react";
 
-type OverlayState = "recording" | "transcribing";
+type OverlayState =
+  | "recording"
+  | "transcribing"
+  | "improving"
+  | "generating"
+  | "translating";
 
 const RecordingOverlay: React.FC = () => {
   const { t } = useTranslation();
@@ -62,9 +64,9 @@ const RecordingOverlay: React.FC = () => {
 
   const getIcon = () => {
     if (state === "recording") {
-      return <MicrophoneIcon />;
+      return <Mic color="white" size={18} />;
     } else {
-      return <TranscriptionIcon />;
+      return <TranscriptionIcon color="white" />;
     }
   };
 
@@ -91,6 +93,15 @@ const RecordingOverlay: React.FC = () => {
         {state === "transcribing" && (
           <div className="transcribing-text">{t("overlay.transcribing")}</div>
         )}
+        {state === "improving" && (
+          <div className="improving-text">{t("overlay.improving")}</div>
+        )}
+        {state === "generating" && (
+          <div className="generating-text">{t("overlay.generating")}</div>
+        )}
+        {state === "translating" && (
+          <div className="translating-text">{t("overlay.translating")}</div>
+        )}
       </div>
 
       <div className="overlay-right">
@@ -101,7 +112,7 @@ const RecordingOverlay: React.FC = () => {
               commands.cancelOperation();
             }}
           >
-            <CancelIcon />
+            <CancelIcon color="white" width={20} height={20} />
           </div>
         )}
       </div>

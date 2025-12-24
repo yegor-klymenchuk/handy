@@ -1,6 +1,12 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { Dropdown } from "../ui/Dropdown";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../ui/Select";
 import { SettingContainer } from "../ui/SettingContainer";
 import { SUPPORTED_LANGUAGES, type SupportedLanguageCode } from "../../i18n";
 import { useSettings } from "@/hooks/useSettings";
@@ -35,11 +41,18 @@ export const AppLanguageSelector: React.FC<AppLanguageSelectorProps> =
         descriptionMode={descriptionMode}
         grouped={grouped}
       >
-        <Dropdown
-          options={languageOptions}
-          selectedValue={currentLanguage}
-          onSelect={handleLanguageChange}
-        />
+        <Select value={currentLanguage} onValueChange={handleLanguageChange}>
+          <SelectTrigger className="min-w-[200px]">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {languageOptions.map((option) => (
+              <SelectItem key={option.value} value={option.value}>
+                {option.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </SettingContainer>
     );
   });

@@ -2,7 +2,13 @@ import React, { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useSettings } from "../../hooks/useSettings";
 import { commands, type ModelUnloadTimeout } from "@/bindings";
-import { Dropdown } from "../ui/Dropdown";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../ui/Select";
 import { SettingContainer } from "../ui/SettingContainer";
 
 interface ModelUnloadTimeoutProps {
@@ -56,8 +62,8 @@ export const ModelUnloadTimeoutSetting: React.FC<ModelUnloadTimeoutProps> = ({
     },
   ];
 
-  const handleChange = async (event: React.ChangeEvent<HTMLSelectElement>) => {
-    const newTimeout = event.target.value as ModelUnloadTimeout;
+  const handleChange = async (value: string) => {
+    const newTimeout = value as ModelUnloadTimeout;
 
     try {
       await commands.setModelUnloadTimeout(newTimeout);
@@ -80,16 +86,22 @@ export const ModelUnloadTimeoutSetting: React.FC<ModelUnloadTimeoutProps> = ({
       descriptionMode={descriptionMode}
       grouped={grouped}
     >
-      <Dropdown
-        options={options}
-        selectedValue={currentValue}
-        onSelect={(value) =>
-          handleChange({
-            target: { value },
-          } as React.ChangeEvent<HTMLSelectElement>)
-        }
+      <Select
+        value={currentValue}
+        onValueChange={handleChange}
         disabled={false}
-      />
+      >
+        <SelectTrigger className="min-w-[200px]">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {options.map((option) => (
+            <SelectItem key={option.value} value={option.value}>
+              {option.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
     </SettingContainer>
   );
 };

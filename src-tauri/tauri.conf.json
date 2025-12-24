@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "Handy",
+  "productName": "Insero",
   "version": "0.6.9",
-  "identifier": "com.pais.handy",
+  "identifier": "com.pais.insero",
   "build": {
     "beforeDevCommand": "bun run dev",
     "devUrl": "http://localhost:1420",
@@ -14,7 +14,7 @@
     "windows": [
       {
         "label": "main",
-        "title": "Handy",
+        "title": "Insero",
         "width": 680,
         "height": 570,
         "minWidth": 680,
@@ -41,13 +41,7 @@
     "targets": "all",
     "resources": ["resources/**/*"],
     "license": "MIT",
-    "icon": [
-      "icons/32x32.png",
-      "icons/128x128.png",
-      "icons/128x128@2x.png",
-      "icons/icon.icns",
-      "icons/icon.ico"
-    ],
+    "icon": ["icons/icon.icns", "icons/icon.ico"],
     "macOS": {
       "files": {},
       "hardenedRuntime": true,
@@ -66,16 +60,19 @@
         "files": {}
       }
     },
-    "windows": {
-      "signCommand": "trusted-signing-cli -e https://eus.codesigning.azure.net/ -a CJ-Signing -c cjpais-dev -d Handy %1"
-    }
+    "windows": {}
   },
   "plugins": {
     "updater": {
-      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEJBQjcyMDk1MjA2NjAxRjkKUldUNUFXWWdsU0MzdXRRZi8zYzhqV2FaNUVDbDd2Rk5VM1IvWWowVXdmRFNKQ1BrMXF5RFFsLy8K",
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDc0REY4RDI3MjAxODk5RkQKUldUOW1SZ2dKNDNmZERvQ09GQ0hRRVFyTE5kbFNxcGtESzl2b2ttTFhHczdMSEZuTkprKzB4M0QK",
       "endpoints": [
-        "https://github.com/cjpais/Handy/releases/latest/download/latest.json"
+        "https://github.com/yegor-klymenchuk/insero-desktop/releases/latest/download/latest.json"
       ]
+    },
+    "deep-link": {
+      "desktop": {
+        "schemes": ["insero"]
+      }
     }
   }
 }

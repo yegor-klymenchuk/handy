@@ -1,32 +1,22 @@
-import React from "react";
+import * as React from "react";
 
-interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
-  variant?: "default" | "compact";
-}
+import { cn } from "@/lib/utils/cn";
 
-export const Input: React.FC<InputProps> = ({
-  className = "",
-  variant = "default",
-  disabled,
-  ...props
-}) => {
-  const baseClasses =
-    "px-2 py-1 text-sm font-semibold bg-mid-gray/10 border border-mid-gray/80 rounded text-left transition-all duration-150";
+const Input = React.forwardRef<HTMLInputElement, React.ComponentProps<"input">>(
+  ({ className, type, ...props }, ref) => {
+    return (
+      <input
+        type={type}
+        className={cn(
+          "flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50",
+          className,
+        )}
+        ref={ref}
+        {...props}
+      />
+    );
+  },
+);
+Input.displayName = "Input";
 
-  const interactiveClasses = disabled
-    ? "opacity-60 cursor-not-allowed bg-mid-gray/10 border-mid-gray/40"
-    : "hover:bg-logo-primary/10 hover:border-logo-primary focus:outline-none focus:bg-logo-primary/20 focus:border-logo-primary";
-
-  const variantClasses = {
-    default: "px-3 py-2",
-    compact: "px-2 py-1",
-  } as const;
-
-  return (
-    <input
-      className={`${baseClasses} ${variantClasses[variant]} ${interactiveClasses} ${className}`}
-      disabled={disabled}
-      {...props}
-    />
-  );
-};
+export { Input };

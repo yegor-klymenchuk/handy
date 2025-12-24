@@ -1,11 +1,25 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { listen } from "@tauri-apps/api/event";
+import { Download, Trash2, Loader2 } from "lucide-react";
 import { commands, type ModelInfo } from "@/bindings";
-import { getTranslatedModelName } from "../../lib/utils/modelTranslation";
-import ModelStatusButton from "./ModelStatusButton";
-import ModelDropdown from "./ModelDropdown";
-import DownloadProgressDisplay from "./DownloadProgressDisplay";
+import {
+  getTranslatedModelName,
+  getTranslatedModelDescription,
+} from "../../lib/utils/modelTranslation";
+import { formatModelSize } from "../../lib/utils/format";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectSeparator,
+  SelectTrigger,
+  SelectValue,
+} from "../ui/Select";
+import { cn } from "@/lib/utils/cn";
+import ModelSelectorDownloadProgress from "./ModelSelectorDownloadProgress";
 
 interface ModelStateEvent {
   event_type: string;
@@ -50,15 +64,12 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({ onError }) => {
   const [modelDownloadProgress, setModelDownloadProgress] = useState<
     Map<string, DownloadProgress>
   >(new Map());
-  const [showModelDropdown, setShowModelDropdown] = useState(false);
   const [downloadStats, setDownloadStats] = useState<
     Map<string, DownloadStats>
   >(new Map());
   const [extractingModels, setExtractingModels] = useState<Set<string>>(
     new Set(),
   );
-
-  const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     loadModels();
@@ -68,7 +79,7 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({ onError }) => {
     const modelStateUnlisten = listen<ModelStateEvent>(
       "model-state-changed",
       (event) => {
-        const { event_type, model_id, model_name, error } = event.payload;
+        const { event_type, model_id, error } = event.payload;
 
         switch (event_type) {
           case "loading_started":
@@ -111,7 +122,6 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({ onError }) => {
           const newStats = new Map(prev);
 
           if (!current) {
-            // First progress update - initialize
             newStats.set(progress.model_id, {
               startTime: now,
               lastUpdate: now,
@@ -119,14 +129,11 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({ onError }) => {
               speed: 0,
             });
           } else {
-            // Calculate speed over last few seconds
-            const timeDiff = (now - current.lastUpdate) / 1000; // seconds
+            const timeDiff = (now - current.lastUpdate) / 1000;
             const bytesDiff = progress.downloaded - current.totalDownloaded;
 
             if (timeDiff > 0.5) {
-              // Update speed every 500ms
-              const currentSpeed = bytesDiff / (1024 * 1024) / timeDiff; // MB/s
-              // Smooth the speed with exponential moving average, but ensure positive values
+              const currentSpeed = bytesDiff / (1024 * 1024) / timeDiff;
               const validCurrentSpeed = Math.max(0, currentSpeed);
               const smoothedSpeed =
                 current.speed > 0
@@ -162,13 +169,12 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({ onError }) => {
           newStats.delete(modelId);
           return newStats;
         });
-        loadModels(); // Refresh models list
+        loadModels();
 
-        // Auto-select the newly downloaded model (skip if recording in progress)
         setTimeout(async () => {
           const isRecording = await commands.isRecording();
           if (isRecording) {
-            return; // Skip auto-switch if recording in progress
+            return;
           }
           loadCurrentModel();
           handleModelSelect(modelId);
@@ -195,13 +201,12 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({ onError }) => {
           next.delete(modelId);
           return next;
         });
-        loadModels(); // Refresh models list
+        loadModels();
 
-        // Auto-select the newly extracted model (skip if recording in progress)
         setTimeout(async () => {
           const isRecording = await commands.isRecording();
           if (isRecording) {
-            return; // Skip auto-switch if recording in progress
+            return;
           }
           loadCurrentModel();
           handleModelSelect(modelId);
@@ -223,20 +228,7 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({ onError }) => {
       setModelStatus("error");
     });
 
-    // Click outside to close dropdown
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(event.target as Node)
-      ) {
-        setShowModelDropdown(false);
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-
     return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
       modelStateUnlisten.then((fn) => fn());
       downloadProgressUnlisten.then((fn) => fn());
       downloadCompleteUnlisten.then((fn) => fn());
@@ -265,7 +257,6 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({ onError }) => {
         setCurrentModelId(current);
 
         if (current) {
-          // Check if model is actually loaded
           const statusResult = await commands.getTranscriptionModelStatus();
           if (statusResult.status === "ok") {
             const transcriptionStatus = statusResult.data;
@@ -287,10 +278,17 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({ onError }) => {
   };
 
   const handleModelSelect = async (modelId: string) => {
+    // Check if this is a downloadable model
+    const model = models.find((m) => m.id === modelId);
+    if (model && !model.is_downloaded) {
+      // Trigger download instead of select
+      handleModelDownload(modelId);
+      return;
+    }
+
     try {
-      setCurrentModelId(modelId); // Set optimistically so loading text shows correct model
+      setCurrentModelId(modelId);
       setModelError(null);
-      setShowModelDropdown(false);
       const result = await commands.setActiveModel(modelId);
       if (result.status === "error") {
         const errorMsg = result.error;
@@ -324,66 +322,67 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({ onError }) => {
     }
   };
 
+  const handleModelDelete = async (e: React.MouseEvent, modelId: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const result = await commands.deleteModel(modelId);
+    if (result.status === "ok") {
+      await loadModels();
+      setModelError(null);
+    }
+  };
+
   const getCurrentModel = () => {
     return models.find((m) => m.id === currentModelId);
   };
 
-  const getModelDisplayText = (): string => {
+  const getStatusColor = (status: ModelStatus): string => {
+    switch (status) {
+      case "ready":
+        return "bg-chart-2";
+      case "loading":
+        return "bg-chart-3 animate-pulse";
+      case "downloading":
+        return "bg-primary animate-pulse";
+      case "extracting":
+        return "bg-chart-3 animate-pulse";
+      case "error":
+        return "bg-destructive";
+      case "unloaded":
+        return "bg-muted-foreground/60";
+      case "none":
+        return "bg-destructive";
+      default:
+        return "bg-muted-foreground/60";
+    }
+  };
+
+  const getDisplayValue = (): string => {
     if (extractingModels.size > 0) {
-      if (extractingModels.size === 1) {
-        const [modelId] = Array.from(extractingModels);
-        const model = models.find((m) => m.id === modelId);
-        const modelName = model
-          ? getTranslatedModelName(model, t)
-          : t("modelSelector.extractingGeneric").replace("...", "");
-        return t("modelSelector.extracting", { modelName });
-      } else {
-        return t("modelSelector.extractingMultiple", {
-          count: extractingModels.size,
-        });
-      }
+      return t("modelSelector.extractingGeneric");
     }
 
     if (modelDownloadProgress.size > 0) {
-      if (modelDownloadProgress.size === 1) {
-        const [progress] = Array.from(modelDownloadProgress.values());
-        const percentage = Math.max(
-          0,
-          Math.min(100, Math.round(progress.percentage)),
-        );
-        return t("modelSelector.downloading", { percentage });
-      } else {
-        return t("modelSelector.downloadingMultiple", {
-          count: modelDownloadProgress.size,
-        });
-      }
+      const [progress] = Array.from(modelDownloadProgress.values());
+      const percentage = Math.max(
+        0,
+        Math.min(100, Math.round(progress.percentage)),
+      );
+      return t("modelSelector.downloading", { percentage });
     }
 
     const currentModel = getCurrentModel();
 
     switch (modelStatus) {
-      case "ready":
-        return currentModel
-          ? getTranslatedModelName(currentModel, t)
-          : t("modelSelector.modelReady");
       case "loading":
         return currentModel
           ? t("modelSelector.loading", {
               modelName: getTranslatedModelName(currentModel, t),
             })
           : t("modelSelector.loadingGeneric");
-      case "extracting":
-        return currentModel
-          ? t("modelSelector.extracting", {
-              modelName: getTranslatedModelName(currentModel, t),
-            })
-          : t("modelSelector.extractingGeneric");
       case "error":
         return modelError || t("modelSelector.modelError");
-      case "unloaded":
-        return currentModel
-          ? getTranslatedModelName(currentModel, t)
-          : t("modelSelector.modelUnloaded");
       case "none":
         return t("modelSelector.noModelDownloadRequired");
       default:
@@ -393,41 +392,158 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({ onError }) => {
     }
   };
 
-  const handleModelDelete = async (modelId: string) => {
-    const result = await commands.deleteModel(modelId);
-    if (result.status === "ok") {
-      await loadModels();
-      setModelError(null);
-    }
-  };
+  const availableModels = models.filter((m) => m.is_downloaded);
+  const downloadableModels = models.filter((m) => !m.is_downloaded);
+  const isFirstRun = availableModels.length === 0 && models.length > 0;
 
   return (
     <>
-      {/* Model Status and Switcher */}
-      <div className="relative" ref={dropdownRef}>
-        <ModelStatusButton
-          status={modelStatus}
-          displayText={getModelDisplayText()}
-          isDropdownOpen={showModelDropdown}
-          onClick={() => setShowModelDropdown(!showModelDropdown)}
-        />
+      <div className="flex items-center gap-3">
+        <Select value={currentModelId} onValueChange={handleModelSelect}>
+          <SelectTrigger className="w-auto min-w-[180px] border-none shadow-none bg-transparent px-0 gap-2 focus:ring-0">
+            <div className="flex items-center gap-2">
+              <div
+                className={cn(
+                  "w-2 h-2 rounded-full",
+                  getStatusColor(modelStatus),
+                )}
+              />
+              <SelectValue placeholder={t("modelSelector.selectModel")}>
+                {getDisplayValue()}
+              </SelectValue>
+            </div>
+          </SelectTrigger>
+          <SelectContent className="w-80">
+            {isFirstRun && (
+              <>
+                <div className="px-3 py-2 bg-primary/10 border-b border-primary/20">
+                  <div className="text-xs font-medium text-primary mb-1">
+                    {t("modelSelector.welcome")}
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    {t("modelSelector.downloadPrompt")}
+                  </div>
+                </div>
+              </>
+            )}
 
-        {/* Model Dropdown */}
-        {showModelDropdown && (
-          <ModelDropdown
-            models={models}
-            currentModelId={currentModelId}
-            downloadProgress={modelDownloadProgress}
-            onModelSelect={handleModelSelect}
-            onModelDownload={handleModelDownload}
-            onModelDelete={handleModelDelete}
-            onError={onError}
-          />
-        )}
+            {availableModels.length > 0 && (
+              <SelectGroup>
+                <SelectLabel>{t("modelSelector.availableModels")}</SelectLabel>
+                {availableModels.map((model) => (
+                  <SelectItem key={model.id} value={model.id}>
+                    <div className="flex items-start justify-between w-full gap-2">
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm">
+                          {getTranslatedModelName(model, t)}
+                        </div>
+                        <div className="text-xs text-muted-foreground/60 italic">
+                          {getTranslatedModelDescription(model, t)}
+                        </div>
+                      </div>
+                      {currentModelId !== model.id && (
+                        <button
+                          onPointerDown={(e) => {
+                            handleModelDelete(e, model.id);
+                          }}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                          }}
+                          className="absolute right-2 text-destructive hover:text-destructive/80 p-1 hover:bg-destructive/10 rounded transition-colors shrink-0 mt-0.5"
+                          title={t("modelSelector.deleteModel", {
+                            modelName: getTranslatedModelName(model, t),
+                          })}
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </button>
+                      )}
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectGroup>
+            )}
+
+            {availableModels.length > 0 && downloadableModels.length > 0 && (
+              <SelectSeparator />
+            )}
+
+            {downloadableModels.length > 0 && (
+              <SelectGroup>
+                <SelectLabel>
+                  {isFirstRun
+                    ? t("modelSelector.chooseModel")
+                    : t("modelSelector.downloadModels")}
+                </SelectLabel>
+                {downloadableModels.map((model) => {
+                  const isDownloading = modelDownloadProgress.has(model.id);
+                  const progress = modelDownloadProgress.get(model.id);
+
+                  return (
+                    <SelectItem
+                      key={model.id}
+                      value={model.id}
+                      disabled={isDownloading}
+                      className="pr-24"
+                    >
+                      <div className="flex items-start justify-between w-full gap-2">
+                        <div className="flex-1 min-w-0">
+                          <div className="text-sm flex flex-wrap items-center gap-1">
+                            <span>{getTranslatedModelName(model, t)}</span>
+                            {model.id === "parakeet-tdt-0.6b-v3" &&
+                              isFirstRun && (
+                                <span className="text-xs bg-primary/20 text-primary px-1.5 py-0.5 rounded shrink-0">
+                                  {t("onboarding.recommended")}
+                                </span>
+                              )}
+                          </div>
+                          <div className="text-xs text-muted-foreground/60 italic">
+                            {getTranslatedModelDescription(model, t)}
+                          </div>
+                          <div className="text-xs text-muted-foreground tabular-nums">
+                            {formatModelSize(Number(model.size_mb))}
+                          </div>
+                        </div>
+                        <div className="absolute right-2 text-xs text-primary tabular-nums shrink-0 mt-0.5">
+                          {isDownloading && progress ? (
+                            <div className="flex items-center gap-1">
+                              <Loader2 className="w-3 h-3 animate-spin" />
+                              <span>
+                                {Math.max(
+                                  0,
+                                  Math.min(
+                                    100,
+                                    Math.round(progress.percentage),
+                                  ),
+                                )}
+                                %
+                              </span>
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-1">
+                              <Download className="w-3 h-3" />
+                              <span>{t("modelSelector.download")}</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </SelectItem>
+                  );
+                })}
+              </SelectGroup>
+            )}
+
+            {availableModels.length === 0 &&
+              downloadableModels.length === 0 && (
+                <div className="px-3 py-2 text-sm text-muted-foreground">
+                  {t("modelSelector.noModelsAvailable")}
+                </div>
+              )}
+          </SelectContent>
+        </Select>
       </div>
 
-      {/* Download Progress Bar for Models */}
-      <DownloadProgressDisplay
+      <ModelSelectorDownloadProgress
         downloadProgress={modelDownloadProgress}
         downloadStats={downloadStats}
       />

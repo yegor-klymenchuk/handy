@@ -5,6 +5,7 @@ export { DebugSettings } from "./debug/DebugSettings";
 export { HistorySettings } from "./history/HistorySettings";
 export { AboutSettings } from "./about/AboutSettings";
 export { PostProcessingSettings } from "./post-processing/PostProcessingSettings";
+export { ProfileSettings } from "./profile/ProfileSettings";
 
 // Individual setting components
 export { MicrophoneSelector } from "./MicrophoneSelector";

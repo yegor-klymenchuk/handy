@@ -29,7 +29,6 @@ export const BaseUrlField: React.FC<BaseUrlFieldProps> = React.memo(
         onChange={(event) => setLocalValue(event.target.value)}
         onBlur={() => onBlur(localValue)}
         placeholder={placeholder}
-        variant="compact"
         disabled={disabled}
         className={`flex-1 min-w-[360px] ${className}`}
         title={disabledMessage}

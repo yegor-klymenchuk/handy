@@ -1,7 +1,13 @@
 import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { type as getOsType } from "@tauri-apps/plugin-os";
-import { Dropdown } from "../ui/Dropdown";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../ui/Select";
 import { SettingContainer } from "../ui/SettingContainer";
 import { useSettings } from "../../hooks/useSettings";
 import type { PasteMethod } from "@/bindings";
@@ -75,14 +81,24 @@ export const PasteMethodSetting: React.FC<PasteMethodProps> = React.memo(
         grouped={grouped}
         tooltipPosition="bottom"
       >
-        <Dropdown
-          options={pasteMethodOptions}
-          selectedValue={selectedMethod}
-          onSelect={(value) =>
+        <Select
+          value={selectedMethod}
+          onValueChange={(value) =>
             updateSetting("paste_method", value as PasteMethod)
           }
           disabled={isUpdating("paste_method")}
-        />
+        >
+          <SelectTrigger className="min-w-[200px]">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {pasteMethodOptions.map((option) => (
+              <SelectItem key={option.value} value={option.value}>
+                {option.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </SettingContainer>
     );
   },

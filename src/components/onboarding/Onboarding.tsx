@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { commands, type ModelInfo } from "@/bindings";
 import ModelCard from "./ModelCard";
-import HandyTextLogo from "../icons/HandyTextLogo";
 
 interface OnboardingProps {
   onModelSelected: () => void;
@@ -61,16 +60,15 @@ const Onboarding: React.FC<OnboardingProps> = ({ onModelSelected }) => {
   return (
     <div className="h-screen w-screen flex flex-col p-6 gap-4 inset-0">
       <div className="flex flex-col items-center gap-2 shrink-0">
-        <HandyTextLogo width={200} />
-        <p className="text-text/70 max-w-md font-medium mx-auto">
+        <p className="text-muted-foreground max-w-md font-medium mx-auto">
           {t("onboarding.subtitle")}
         </p>
       </div>
 
       <div className="max-w-[600px] w-full mx-auto text-center flex-1 flex flex-col min-h-0">
         {error && (
-          <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4 mb-4 shrink-0">
-            <p className="text-red-400 text-sm">{error}</p>
+          <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4 mb-4 shrink-0">
+            <p className="text-destructive text-sm">{error}</p>
           </div>
         )}
 

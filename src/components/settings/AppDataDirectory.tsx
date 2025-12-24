@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { commands } from "@/bindings";
 import { SettingContainer } from "../ui/SettingContainer";
 import { Button } from "../ui/Button";
+import { Input } from "../ui/Input";
 
 interface AppDataDirectoryProps {
   descriptionMode?: "tooltip" | "inline";
@@ -76,15 +77,13 @@ export const AppDataDirectory: React.FC<AppDataDirectoryProps> = ({
       layout="stacked"
     >
       <div className="flex items-center gap-2">
-        <div className="flex-1 min-w-0 px-2 py-2 bg-mid-gray/10 border border-mid-gray/80 rounded text-xs font-mono break-all">
-          {appDirPath}
-        </div>
+        <Input readOnly value={appDirPath} className="font-mono" style={{ fontSize: '12px' }} />
+
         <Button
           onClick={handleOpen}
           variant="secondary"
           size="sm"
           disabled={!appDirPath}
-          className="px-3 py-2"
         >
           {t("common.open")}
         </Button>

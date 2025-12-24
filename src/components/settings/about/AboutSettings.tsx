@@ -49,32 +49,32 @@ export const AboutSettings: React.FC = () => {
 
         <AppDataDirectory descriptionMode="tooltip" grouped={true} />
 
-        <SettingContainer
+        {/* <SettingContainer
           title={t("settings.about.sourceCode.title")}
           description={t("settings.about.sourceCode.description")}
           grouped={true}
         >
           <Button
             variant="secondary"
-            size="md"
+            size="sm"
             onClick={() => openUrl("https://github.com/cjpais/Handy")}
           >
             {t("settings.about.sourceCode.button")}
           </Button>
-        </SettingContainer>
+        </SettingContainer> */}
 
-        <SettingContainer
+        {/* <SettingContainer
           title={t("settings.about.supportDevelopment.title")}
           description={t("settings.about.supportDevelopment.description")}
           grouped={true}
         >
-          <Button variant="primary" size="md" onClick={handleDonateClick}>
+          <Button size="sm" onClick={handleDonateClick}>
             {t("settings.about.supportDevelopment.button")}
           </Button>
-        </SettingContainer>
+        </SettingContainer> */}
       </SettingsGroup>
 
-      <SettingsGroup title={t("settings.about.acknowledgments.title")}>
+      {/* <SettingsGroup title={t("settings.about.acknowledgments.title")}>
         <SettingContainer
           title={t("settings.about.acknowledgments.whisper.title")}
           description={t("settings.about.acknowledgments.whisper.description")}
@@ -85,7 +85,7 @@ export const AboutSettings: React.FC = () => {
             {t("settings.about.acknowledgments.whisper.details")}
           </div>
         </SettingContainer>
-      </SettingsGroup>
+      </SettingsGroup> */}
     </div>
   );
 };

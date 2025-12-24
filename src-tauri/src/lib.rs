@@ -1,4 +1,5 @@
 mod actions;
+mod agents;
 #[cfg(all(target_os = "macos", target_arch = "aarch64"))]
 mod apple_intelligence;
 mod audio_feedback;
@@ -110,6 +111,9 @@ fn show_main_window(app: &AppHandle) {
 }
 
 fn initialize_core_logic(app_handle: &AppHandle) {
+    // Load .env file if it exists (for development)
+    let _ = dotenvy::dotenv();
+
     // Initialize the input state (Enigo singleton for keyboard/mouse simulation)
     let enigo_state = input::EnigoState::new().expect("Failed to initialize input state (Enigo)");
     app_handle.manage(enigo_state);
@@ -312,36 +316,40 @@ pub fn run() {
     ]);
 
     #[cfg(debug_assertions)] // <- Only export on non-release builds
-    specta_builder
-        .export(
-            Typescript::default().bigint(BigIntExportBehavior::Number),
-            "../src/bindings.ts",
-        )
-        .expect("Failed to export typescript bindings");
+    if let Err(e) = specta_builder.export(
+        Typescript::default().bigint(BigIntExportBehavior::Number),
+        "../src/bindings.ts",
+    ) {
+        // This can fail when running a debug build from /Applications or other installed locations
+        // where we don't have write access to the source directory. This is expected and safe to ignore.
+        eprintln!("Note: Could not export typescript bindings (this is normal for installed debug builds): {}", e);
+    }
 
-    let mut builder = tauri::Builder::default().plugin(
-        LogBuilder::new()
-            .level(log::LevelFilter::Trace) // Set to most verbose level globally
-            .max_file_size(500_000)
-            .rotation_strategy(RotationStrategy::KeepOne)
-            .clear_targets()
-            .targets([
-                // Console output respects RUST_LOG environment variable
-                Target::new(TargetKind::Stdout).filter({
-                    let console_filter = console_filter.clone();
-                    move |metadata| console_filter.enabled(metadata)
-                }),
-                // File logs respect the user's settings (stored in FILE_LOG_LEVEL atomic)
-                Target::new(TargetKind::LogDir {
-                    file_name: Some("handy".into()),
-                })
-                .filter(|metadata| {
-                    let file_level = FILE_LOG_LEVEL.load(Ordering::Relaxed);
-                    metadata.level() <= level_filter_from_u8(file_level)
-                }),
-            ])
-            .build(),
-    );
+    let mut builder = tauri::Builder::default()
+        .plugin(tauri_plugin_shell::init())
+        .plugin(
+            LogBuilder::new()
+                .level(log::LevelFilter::Trace) // Set to most verbose level globally
+                .max_file_size(500_000)
+                .rotation_strategy(RotationStrategy::KeepOne)
+                .clear_targets()
+                .targets([
+                    // Console output respects RUST_LOG environment variable
+                    Target::new(TargetKind::Stdout).filter({
+                        let console_filter = console_filter.clone();
+                        move |metadata| console_filter.enabled(metadata)
+                    }),
+                    // File logs respect the user's settings (stored in FILE_LOG_LEVEL atomic)
+                    Target::new(TargetKind::LogDir {
+                        file_name: Some("insero".into()),
+                    })
+                    .filter(|metadata| {
+                        let file_level = FILE_LOG_LEVEL.load(Ordering::Relaxed);
+                        metadata.level() <= level_filter_from_u8(file_level)
+                    }),
+                ])
+                .build(),
+        );
 
     #[cfg(target_os = "macos")]
     {
@@ -360,6 +368,7 @@ pub fn run() {
         .plugin(tauri_plugin_macos_permissions::init())
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_store::Builder::default().build())
+        .plugin(tauri_plugin_deep_link::init())
         .plugin(tauri_plugin_global_shortcut::Builder::new().build())
         .plugin(tauri_plugin_autostart::init(
             MacosLauncher::LaunchAgent,

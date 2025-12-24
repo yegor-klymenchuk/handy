@@ -15,17 +15,15 @@ interface DownloadStats {
   speed: number;
 }
 
-interface DownloadProgressDisplayProps {
+interface ModelSelectorDownloadProgressProps {
   downloadProgress: Map<string, DownloadProgress>;
   downloadStats: Map<string, DownloadStats>;
   className?: string;
 }
 
-const DownloadProgressDisplay: React.FC<DownloadProgressDisplayProps> = ({
-  downloadProgress,
-  downloadStats,
-  className = "",
-}) => {
+const ModelSelectorDownloadProgress: React.FC<
+  ModelSelectorDownloadProgressProps
+> = ({ downloadProgress, downloadStats, className = "" }) => {
   if (downloadProgress.size === 0) {
     return null;
   }
@@ -51,4 +49,4 @@ const DownloadProgressDisplay: React.FC<DownloadProgressDisplayProps> = ({
   );
 };
 
-export default DownloadProgressDisplay;
+export default ModelSelectorDownloadProgress;

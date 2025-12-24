@@ -1,6 +1,12 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { Dropdown } from "../ui/Dropdown";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../ui/Select";
 import { SettingContainer } from "../ui/SettingContainer";
 import { useSettings } from "../../hooks/useSettings";
 import type { OverlayPosition } from "@/bindings";
@@ -31,14 +37,24 @@ export const ShowOverlay: React.FC<ShowOverlayProps> = React.memo(
         descriptionMode={descriptionMode}
         grouped={grouped}
       >
-        <Dropdown
-          options={overlayOptions}
-          selectedValue={selectedPosition}
-          onSelect={(value) =>
+        <Select
+          value={selectedPosition}
+          onValueChange={(value) =>
             updateSetting("overlay_position", value as OverlayPosition)
           }
           disabled={isUpdating("overlay_position")}
-        />
+        >
+          <SelectTrigger className="min-w-[200px]">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {overlayOptions.map((option) => (
+              <SelectItem key={option.value} value={option.value}>
+                {option.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </SettingContainer>
     );
   },

@@ -1,13 +1,11 @@
-import { useCallback, useEffect, useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import { useSettings } from "../../../hooks/useSettings";
-import { useSettingsStore } from "../../../stores/settingsStore";
 import type { PostProcessProvider } from "@/bindings";
-import type { ModelOption } from "./types";
-import type { DropdownOption } from "../../ui/Dropdown";
+import type { Option } from "@/lib/utils/option";
 
 type PostProcessProviderState = {
   enabled: boolean;
-  providerOptions: DropdownOption[];
+  providerOptions: Option[];
   selectedProviderId: string;
   selectedProvider: PostProcessProvider | undefined;
   isCustomProvider: boolean;
@@ -20,7 +18,7 @@ type PostProcessProviderState = {
   isApiKeyUpdating: boolean;
   model: string;
   handleModelChange: (value: string) => void;
-  modelOptions: ModelOption[];
+  modelOptions: Option[];
   isModelUpdating: boolean;
   isFetchingModels: boolean;
   handleProviderSelect: (providerId: string) => void;
@@ -66,7 +64,7 @@ export const usePostProcessProviderState = (): PostProcessProviderState => {
   const apiKey = settings?.post_process_api_keys?.[selectedProviderId] ?? "";
   const model = settings?.post_process_models?.[selectedProviderId] ?? "";
 
-  const providerOptions = useMemo<DropdownOption[]>(() => {
+  const providerOptions = useMemo<Option[]>(() => {
     return providers.map((provider) => ({
       value: provider.id,
       label: provider.label,
@@ -136,9 +134,9 @@ export const usePostProcessProviderState = (): PostProcessProviderState => {
 
   const availableModelsRaw = postProcessModelOptions[selectedProviderId] || [];
 
-  const modelOptions = useMemo<ModelOption[]>(() => {
+  const modelOptions = useMemo<Option[]>(() => {
     const seen = new Set<string>();
-    const options: ModelOption[] = [];
+    const options: Option[] = [];
 
     const upsert = (value: string | null | undefined) => {
       const trimmed = value?.trim();

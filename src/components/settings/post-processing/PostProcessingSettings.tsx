@@ -152,7 +152,7 @@ const PostProcessingSettingsApiComponent: React.FC = () => {
           <ResetButton
             onClick={state.handleRefreshModels}
             disabled={state.isFetchingModels || state.isAppleProvider}
-            ariaLabel={t("settings.postProcessing.api.model.refreshModels")}
+            aria-label={t("settings.postProcessing.api.model.refreshModels")}
             className="flex h-10 w-10 items-center justify-center"
           >
             <RefreshCcw
@@ -309,8 +309,8 @@ const PostProcessingSettingsPromptsComponent: React.FC = () => {
           />
           <Button
             onClick={handleStartCreate}
-            variant="primary"
-            size="md"
+            variant="default"
+            size="default"
             disabled={isCreating}
           >
             {t("settings.postProcessing.prompts.createNew")}
@@ -330,7 +330,6 @@ const PostProcessingSettingsPromptsComponent: React.FC = () => {
                 placeholder={t(
                   "settings.postProcessing.prompts.promptLabelPlaceholder",
                 )}
-                variant="compact"
               />
             </div>
 
@@ -356,8 +355,8 @@ const PostProcessingSettingsPromptsComponent: React.FC = () => {
             <div className="flex gap-2 pt-2">
               <Button
                 onClick={handleUpdatePrompt}
-                variant="primary"
-                size="md"
+                variant="default"
+                size="default"
                 disabled={!draftName.trim() || !draftText.trim() || !isDirty}
               >
                 {t("settings.postProcessing.prompts.updatePrompt")}
@@ -365,7 +364,7 @@ const PostProcessingSettingsPromptsComponent: React.FC = () => {
               <Button
                 onClick={() => handleDeletePrompt(selectedPromptId)}
                 variant="secondary"
-                size="md"
+                size="default"
                 disabled={!selectedPromptId || prompts.length <= 1}
               >
                 {t("settings.postProcessing.prompts.deletePrompt")}
@@ -386,7 +385,7 @@ const PostProcessingSettingsPromptsComponent: React.FC = () => {
 
         {isCreating && (
           <div className="space-y-3">
-            <div className="space-y-2 block flex flex-col">
+            <div className="space-y-2 flex flex-col">
               <label className="text-sm font-semibold text-text">
                 {t("settings.postProcessing.prompts.promptLabel")}
               </label>
@@ -397,7 +396,6 @@ const PostProcessingSettingsPromptsComponent: React.FC = () => {
                 placeholder={t(
                   "settings.postProcessing.prompts.promptLabelPlaceholder",
                 )}
-                variant="compact"
               />
             </div>
 
@@ -423,8 +421,8 @@ const PostProcessingSettingsPromptsComponent: React.FC = () => {
             <div className="flex gap-2 pt-2">
               <Button
                 onClick={handleCreatePrompt}
-                variant="primary"
-                size="md"
+                variant="default"
+                size="default"
                 disabled={!draftName.trim() || !draftText.trim()}
               >
                 {t("settings.postProcessing.prompts.createPrompt")}
@@ -432,7 +430,7 @@ const PostProcessingSettingsPromptsComponent: React.FC = () => {
               <Button
                 onClick={handleCancelCreate}
                 variant="secondary"
-                size="md"
+                size="default"
               >
                 {t("settings.postProcessing.prompts.cancel")}
               </Button>

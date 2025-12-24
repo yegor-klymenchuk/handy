@@ -5,7 +5,7 @@
   grid-template-columns: auto 1fr auto;
   align-items: center;
   padding: 6px;
-  background: #000000cc;
+  background: oklch(0.623 0.214 259.815 / 0.8);
   border-radius: 18px;
   opacity: 0;
   transition: opacity 300ms ease-out;
@@ -52,7 +52,10 @@
   opacity: 1;
 }
 
-.transcribing-text {
+.transcribing-text,
+.improving-text,
+.generating-text,
+.translating-text {
   color: white;
   font-size: 12px;
   font-family:

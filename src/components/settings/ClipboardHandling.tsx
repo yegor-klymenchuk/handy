@@ -1,6 +1,12 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { Dropdown } from "../ui/Dropdown";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../ui/Select";
 import { SettingContainer } from "../ui/SettingContainer";
 import { useSettings } from "../../hooks/useSettings";
 import type { ClipboardHandling } from "@/bindings";
@@ -36,14 +42,24 @@ export const ClipboardHandlingSetting: React.FC<ClipboardHandlingProps> =
         descriptionMode={descriptionMode}
         grouped={grouped}
       >
-        <Dropdown
-          options={clipboardHandlingOptions}
-          selectedValue={selectedHandling}
-          onSelect={(value) =>
+        <Select
+          value={selectedHandling}
+          onValueChange={(value) =>
             updateSetting("clipboard_handling", value as ClipboardHandling)
           }
           disabled={isUpdating("clipboard_handling")}
-        />
+        >
+          <SelectTrigger className="min-w-[200px]">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {clipboardHandlingOptions.map((option) => (
+              <SelectItem key={option.value} value={option.value}>
+                {option.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </SettingContainer>
     );
   });

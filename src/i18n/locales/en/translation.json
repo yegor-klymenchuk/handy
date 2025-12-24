@@ -11,7 +11,8 @@
     "postProcessing": "Post Process",
     "history": "History",
     "debug": "Debug",
-    "about": "About"
+    "about": "About",
+    "profile": "Profile"
   },
   "onboarding": {
     "subtitle": "To get started, choose a transcription model",
@@ -54,7 +55,7 @@
     }
   },
   "modelSelector": {
-    "welcome": "Welcome to Handy!",
+    "welcome": "Welcome to Insero!",
     "downloadPrompt": "Download a model below to get started with transcription.",
     "availableModels": "Available Models",
     "downloadModels": "Download Models",
@@ -80,7 +81,7 @@
     "general": {
       "title": "General",
       "shortcut": {
-        "title": "Handy Shortcuts",
+        "title": "Insero Shortcuts",
         "description": "Configure keyboard shortcuts to trigger speech-to-text recording",
         "loading": "Loading shortcuts...",
         "none": "No shortcuts configured",
@@ -90,6 +91,14 @@
           "transcribe": {
             "name": "Transcribe",
             "description": "Converts your speech into text."
+          },
+          "transcribe_and_enhance": {
+            "name": "Transcribe + Enhance",
+            "description": "Converts your speech into text and enhances it."
+          },
+          "transcribe_and_generate": {
+            "name": "Transcribe + Generate",
+            "description": "Generates a content based on the transcription."
           },
           "cancel": {
             "name": "Cancel",
@@ -146,7 +155,7 @@
       },
       "autostart": {
         "label": "Launch on Startup",
-        "description": "Automatically start Handy when you log in to your computer."
+        "description": "Automatically start Insero when you log in to your computer."
       },
       "overlay": {
         "title": "Overlay Position",
@@ -283,7 +292,7 @@
       },
       "updateChecks": {
         "label": "Check for Updates",
-        "description": "Automatically check for new versions of Handy"
+        "description": "Automatically check for new versions of Insero"
       },
       "soundTheme": {
         "label": "Sound Theme",
@@ -338,11 +347,11 @@
       "title": "About",
       "version": {
         "title": "Version",
-        "description": "Current version of Handy"
+        "description": "Current version of Insero"
       },
       "appDataDirectory": {
         "title": "App Data Directory",
-        "description": "Location where Handy stores its data"
+        "description": "Location where Insero stores its data"
       },
       "sourceCode": {
         "title": "Source Code",
@@ -351,7 +360,7 @@
       },
       "supportDevelopment": {
         "title": "Support Development",
-        "description": "Help us continue building Handy",
+        "description": "Help us continue building Insero",
         "button": "Donate"
       },
       "acknowledgments": {
@@ -359,8 +368,19 @@
         "whisper": {
           "title": "Whisper.cpp",
           "description": "High-performance inference of OpenAI's Whisper automatic speech recognition model",
-          "details": "Handy uses Whisper.cpp for fast, local speech-to-text processing. Thanks to the amazing work by Georgi Gerganov and contributors."
+          "details": "Insero uses Whisper.cpp for fast, local speech-to-text processing. Thanks to the amazing work by Georgi Gerganov and contributors."
         }
+      }
+    },
+    "profile": {
+      "title": "Profile",
+      "notSignedIn": "You are not signed in",
+      "signIn": "Sign In",
+      "signOut": "Sign Out",
+      "unknownUser": "Unknown User",
+      "account": {
+        "title": "Account",
+        "description": "Manage your account settings"
       }
     }
   },
@@ -398,11 +418,12 @@
     "off": "Off",
     "yes": "Yes",
     "no": "No",
+    "use": "Use",
     "noOptionsFound": "No options found"
   },
   "accessibility": {
     "permissionsRequired": "Accessibility Permissions Required",
-    "permissionsDescription": "Handy needs accessibility permissions to type transcribed text.",
+    "permissionsDescription": "Insero needs accessibility permissions to type transcribed text.",
     "openSettings": "Open System Settings",
     "dismiss": "Dismiss"
   },
@@ -411,9 +432,13 @@
   },
   "appLanguage": {
     "title": "Application Language",
-    "description": "Change the language of the Handy interface"
+    "description": "Change the language of the Insero interface"
   },
   "overlay": {
-    "transcribing": "Transcribing..."
+    "recording": "Recording...",
+    "transcribing": "Transcribing...",
+    "improving": "Improving...",
+    "generating": "Generating...",
+    "translating": "Translating..."
   }
 }

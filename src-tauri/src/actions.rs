@@ -1,3 +1,4 @@
+use crate::agents::{EnhancePipeline, GeneratePipeline};
 #[cfg(all(target_os = "macos", target_arch = "aarch64"))]
 use crate::apple_intelligence;
 use crate::audio_feedback::{play_feedback_sound, play_feedback_sound_blocking, SoundType};
@@ -329,16 +330,16 @@ impl ShortcutAction for TranscribeAction {
                             let mut post_processed_text: Option<String> = None;
                             let mut post_process_prompt: Option<String> = None;
 
-                            // First, check if Chinese variant conversion is needed
+                            // Check if Chinese variant conversion is needed
                             if let Some(converted_text) =
-                                maybe_convert_chinese_variant(&settings, &transcription).await
+                                maybe_convert_chinese_variant(&settings, &final_text).await
                             {
                                 final_text = converted_text.clone();
                                 post_processed_text = Some(converted_text);
                             }
                             // Then apply regular post-processing if enabled
                             else if let Some(processed_text) =
-                                maybe_post_process_transcription(&settings, &transcription).await
+                                maybe_post_process_transcription(&settings, &final_text).await
                             {
                                 final_text = processed_text.clone();
                                 post_processed_text = Some(processed_text);
@@ -417,6 +418,431 @@ impl ShortcutAction for TranscribeAction {
     }
 }
 
+// Transcribe + Enhance Action
+struct TranscribeEnhanceAction;
+
+impl ShortcutAction for TranscribeEnhanceAction {
+    fn start(&self, app: &AppHandle, binding_id: &str, _shortcut_str: &str) {
+        let start_time = Instant::now();
+        debug!(
+            "TranscribeEnhanceAction::start called for binding: {}",
+            binding_id
+        );
+
+        // Load model in the background
+        let tm = app.state::<Arc<TranscriptionManager>>();
+        tm.initiate_model_load();
+
+        let binding_id = binding_id.to_string();
+        change_tray_icon(app, TrayIconState::Recording);
+        show_recording_overlay(app);
+
+        let rm = app.state::<Arc<AudioRecordingManager>>();
+
+        let settings = get_settings(app);
+        let is_always_on = settings.always_on_microphone;
+        debug!("Microphone mode - always_on: {}", is_always_on);
+
+        let mut recording_started = false;
+        if is_always_on {
+            debug!("Always-on mode: Playing audio feedback immediately");
+            let rm_clone = Arc::clone(&rm);
+            let app_clone = app.clone();
+            std::thread::spawn(move || {
+                play_feedback_sound_blocking(&app_clone, SoundType::Start);
+                rm_clone.apply_mute();
+            });
+
+            recording_started = rm.try_start_recording(&binding_id);
+            debug!("Recording started: {}", recording_started);
+        } else {
+            debug!("On-demand mode: Starting recording first, then audio feedback");
+            let recording_start_time = Instant::now();
+            if rm.try_start_recording(&binding_id) {
+                recording_started = true;
+                debug!("Recording started in {:?}", recording_start_time.elapsed());
+                let app_clone = app.clone();
+                let rm_clone = Arc::clone(&rm);
+                std::thread::spawn(move || {
+                    std::thread::sleep(std::time::Duration::from_millis(100));
+                    debug!("Handling delayed audio feedback/mute sequence");
+                    play_feedback_sound_blocking(&app_clone, SoundType::Start);
+                    rm_clone.apply_mute();
+                });
+            } else {
+                debug!("Failed to start recording");
+            }
+        }
+
+        if recording_started {
+            shortcut::register_cancel_shortcut(app);
+        }
+
+        debug!(
+            "TranscribeEnhanceAction::start completed in {:?}",
+            start_time.elapsed()
+        );
+    }
+
+    fn stop(&self, app: &AppHandle, binding_id: &str, _shortcut_str: &str) {
+        shortcut::unregister_cancel_shortcut(app);
+
+        let stop_time = Instant::now();
+        debug!(
+            "TranscribeEnhanceAction::stop called for binding: {}",
+            binding_id
+        );
+
+        let ah = app.clone();
+        let rm = Arc::clone(&app.state::<Arc<AudioRecordingManager>>());
+        let tm = Arc::clone(&app.state::<Arc<TranscriptionManager>>());
+        let hm = Arc::clone(&app.state::<Arc<HistoryManager>>());
+
+        change_tray_icon(app, TrayIconState::Transcribing);
+        show_transcribing_overlay(app);
+
+        rm.remove_mute();
+        play_feedback_sound(app, SoundType::Stop);
+
+        let binding_id = binding_id.to_string();
+
+        tauri::async_runtime::spawn(async move {
+            let binding_id = binding_id.clone();
+            debug!(
+                "Starting async transcription+enhance task for binding: {}",
+                binding_id
+            );
+
+            let stop_recording_time = Instant::now();
+            if let Some(samples) = rm.stop_recording(&binding_id) {
+                debug!(
+                    "Recording stopped and samples retrieved in {:?}, sample count: {}",
+                    stop_recording_time.elapsed(),
+                    samples.len()
+                );
+
+                let transcription_time = Instant::now();
+                let samples_clone = samples.clone();
+                match tm.transcribe(samples) {
+                    Ok(transcription) => {
+                        debug!(
+                            "Transcription completed in {:?}: '{}'",
+                            transcription_time.elapsed(),
+                            transcription
+                        );
+                        if !transcription.is_empty() {
+                            let mut final_text = transcription.clone();
+                            let mut post_processed_text: Option<String> = None;
+
+                            // Process through enhancement pipeline
+                            let processing_time = Instant::now();
+
+                            match EnhancePipeline::from_env() {
+                                Ok(pipeline) => {
+                                    let timeout = std::time::Duration::from_secs(60);
+
+                                    match pipeline
+                                        .process_with_timeout(&transcription, Some(&ah), timeout)
+                                        .await
+                                    {
+                                        Ok(result) => {
+                                            debug!(
+                                                "Enhancement completed in {:?} - Translated: {}",
+                                                processing_time.elapsed(),
+                                                result.was_translated
+                                            );
+
+                                            final_text = result.content.clone();
+                                            post_processed_text = Some(result.content);
+                                        }
+                                        Err(e) => {
+                                            error!("Failed to enhance text: {}, using original", e);
+                                        }
+                                    }
+                                }
+                                Err(e) => {
+                                    error!(
+                                        "Failed to create enhance pipeline: {}, using original",
+                                        e
+                                    );
+                                }
+                            }
+
+                            // Save to history
+                            let hm_clone = Arc::clone(&hm);
+                            let transcription_for_history = transcription.clone();
+                            tauri::async_runtime::spawn(async move {
+                                if let Err(e) = hm_clone
+                                    .save_transcription(
+                                        samples_clone,
+                                        transcription_for_history,
+                                        post_processed_text,
+                                        None,
+                                    )
+                                    .await
+                                {
+                                    error!("Failed to save transcription to history: {}", e);
+                                }
+                            });
+
+                            // Paste the final text
+                            let ah_clone = ah.clone();
+                            let paste_time = Instant::now();
+                            ah.run_on_main_thread(move || {
+                                match utils::paste(final_text, ah_clone.clone()) {
+                                    Ok(()) => debug!(
+                                        "Text pasted successfully in {:?}",
+                                        paste_time.elapsed()
+                                    ),
+                                    Err(e) => error!("Failed to paste transcription: {}", e),
+                                }
+                                utils::hide_recording_overlay(&ah_clone);
+                                change_tray_icon(&ah_clone, TrayIconState::Idle);
+                            })
+                            .unwrap_or_else(|e| {
+                                error!("Failed to run paste on main thread: {:?}", e);
+                                utils::hide_recording_overlay(&ah);
+                                change_tray_icon(&ah, TrayIconState::Idle);
+                            });
+                        } else {
+                            utils::hide_recording_overlay(&ah);
+                            change_tray_icon(&ah, TrayIconState::Idle);
+                        }
+                    }
+                    Err(err) => {
+                        debug!("Transcription error: {}", err);
+                        utils::hide_recording_overlay(&ah);
+                        change_tray_icon(&ah, TrayIconState::Idle);
+                    }
+                }
+            } else {
+                debug!("No samples retrieved from recording stop");
+                utils::hide_recording_overlay(&ah);
+                change_tray_icon(&ah, TrayIconState::Idle);
+            }
+        });
+
+        debug!(
+            "TranscribeEnhanceAction::stop completed in {:?}",
+            stop_time.elapsed()
+        );
+    }
+}
+
+// Transcribe + Generate Action
+struct TranscribeGenerateAction;
+
+impl ShortcutAction for TranscribeGenerateAction {
+    fn start(&self, app: &AppHandle, binding_id: &str, _shortcut_str: &str) {
+        let start_time = Instant::now();
+        debug!(
+            "TranscribeGenerateAction::start called for binding: {}",
+            binding_id
+        );
+
+        // Load model in the background
+        let tm = app.state::<Arc<TranscriptionManager>>();
+        tm.initiate_model_load();
+
+        let binding_id = binding_id.to_string();
+        change_tray_icon(app, TrayIconState::Recording);
+        show_recording_overlay(app);
+
+        let rm = app.state::<Arc<AudioRecordingManager>>();
+
+        let settings = get_settings(app);
+        let is_always_on = settings.always_on_microphone;
+        debug!("Microphone mode - always_on: {}", is_always_on);
+
+        let mut recording_started = false;
+        if is_always_on {
+            debug!("Always-on mode: Playing audio feedback immediately");
+            let rm_clone = Arc::clone(&rm);
+            let app_clone = app.clone();
+            std::thread::spawn(move || {
+                play_feedback_sound_blocking(&app_clone, SoundType::Start);
+                rm_clone.apply_mute();
+            });
+
+            recording_started = rm.try_start_recording(&binding_id);
+            debug!("Recording started: {}", recording_started);
+        } else {
+            debug!("On-demand mode: Starting recording first, then audio feedback");
+            let recording_start_time = Instant::now();
+            if rm.try_start_recording(&binding_id) {
+                recording_started = true;
+                debug!("Recording started in {:?}", recording_start_time.elapsed());
+                let app_clone = app.clone();
+                let rm_clone = Arc::clone(&rm);
+                std::thread::spawn(move || {
+                    std::thread::sleep(std::time::Duration::from_millis(100));
+                    debug!("Handling delayed audio feedback/mute sequence");
+                    play_feedback_sound_blocking(&app_clone, SoundType::Start);
+                    rm_clone.apply_mute();
+                });
+            } else {
+                debug!("Failed to start recording");
+            }
+        }
+
+        if recording_started {
+            shortcut::register_cancel_shortcut(app);
+        }
+
+        debug!(
+            "TranscribeGenerateAction::start completed in {:?}",
+            start_time.elapsed()
+        );
+    }
+
+    fn stop(&self, app: &AppHandle, binding_id: &str, _shortcut_str: &str) {
+        shortcut::unregister_cancel_shortcut(app);
+
+        let stop_time = Instant::now();
+        debug!(
+            "TranscribeGenerateAction::stop called for binding: {}",
+            binding_id
+        );
+
+        let ah = app.clone();
+        let rm = Arc::clone(&app.state::<Arc<AudioRecordingManager>>());
+        let tm = Arc::clone(&app.state::<Arc<TranscriptionManager>>());
+        let hm = Arc::clone(&app.state::<Arc<HistoryManager>>());
+
+        change_tray_icon(app, TrayIconState::Transcribing);
+        show_transcribing_overlay(app);
+
+        rm.remove_mute();
+        play_feedback_sound(app, SoundType::Stop);
+
+        let binding_id = binding_id.to_string();
+
+        tauri::async_runtime::spawn(async move {
+            let binding_id = binding_id.clone();
+            debug!(
+                "Starting async transcription+generate task for binding: {}",
+                binding_id
+            );
+
+            let stop_recording_time = Instant::now();
+            if let Some(samples) = rm.stop_recording(&binding_id) {
+                debug!(
+                    "Recording stopped and samples retrieved in {:?}, sample count: {}",
+                    stop_recording_time.elapsed(),
+                    samples.len()
+                );
+
+                let transcription_time = Instant::now();
+                let samples_clone = samples.clone();
+                match tm.transcribe(samples) {
+                    Ok(transcription) => {
+                        debug!(
+                            "Transcription completed in {:?}: '{}'",
+                            transcription_time.elapsed(),
+                            transcription
+                        );
+                        if !transcription.is_empty() {
+                            let mut final_text = transcription.clone();
+                            let mut post_processed_text: Option<String> = None;
+
+                            // Process through generation pipeline
+                            let processing_time = Instant::now();
+
+                            match GeneratePipeline::from_env() {
+                                Ok(pipeline) => {
+                                    let timeout = std::time::Duration::from_secs(120);
+
+                                    match pipeline
+                                        .process_with_timeout(&transcription, Some(&ah), timeout)
+                                        .await
+                                    {
+                                        Ok(result) => {
+                                            debug!(
+                                                "Generation completed in {:?} - Translated: {}",
+                                                processing_time.elapsed(),
+                                                result.was_translated
+                                            );
+
+                                            final_text = result.content.clone();
+                                            post_processed_text = Some(result.content);
+                                        }
+                                        Err(e) => {
+                                            error!(
+                                                "Failed to generate text: {}, using original",
+                                                e
+                                            );
+                                        }
+                                    }
+                                }
+                                Err(e) => {
+                                    error!(
+                                        "Failed to create generate pipeline: {}, using original",
+                                        e
+                                    );
+                                }
+                            }
+
+                            // Save to history
+                            let hm_clone = Arc::clone(&hm);
+                            let transcription_for_history = transcription.clone();
+                            tauri::async_runtime::spawn(async move {
+                                if let Err(e) = hm_clone
+                                    .save_transcription(
+                                        samples_clone,
+                                        transcription_for_history,
+                                        post_processed_text,
+                                        None,
+                                    )
+                                    .await
+                                {
+                                    error!("Failed to save transcription to history: {}", e);
+                                }
+                            });
+
+                            // Paste the final text
+                            let ah_clone = ah.clone();
+                            let paste_time = Instant::now();
+                            ah.run_on_main_thread(move || {
+                                match utils::paste(final_text, ah_clone.clone()) {
+                                    Ok(()) => debug!(
+                                        "Text pasted successfully in {:?}",
+                                        paste_time.elapsed()
+                                    ),
+                                    Err(e) => error!("Failed to paste transcription: {}", e),
+                                }
+                                utils::hide_recording_overlay(&ah_clone);
+                                change_tray_icon(&ah_clone, TrayIconState::Idle);
+                            })
+                            .unwrap_or_else(|e| {
+                                error!("Failed to run paste on main thread: {:?}", e);
+                                utils::hide_recording_overlay(&ah);
+                                change_tray_icon(&ah, TrayIconState::Idle);
+                            });
+                        } else {
+                            utils::hide_recording_overlay(&ah);
+                            change_tray_icon(&ah, TrayIconState::Idle);
+                        }
+                    }
+                    Err(err) => {
+                        debug!("Transcription error: {}", err);
+                        utils::hide_recording_overlay(&ah);
+                        change_tray_icon(&ah, TrayIconState::Idle);
+                    }
+                }
+            } else {
+                debug!("No samples retrieved from recording stop");
+                utils::hide_recording_overlay(&ah);
+                change_tray_icon(&ah, TrayIconState::Idle);
+            }
+        });
+
+        debug!(
+            "TranscribeGenerateAction::stop completed in {:?}",
+            stop_time.elapsed()
+        );
+    }
+}
+
 // Cancel Action
 struct CancelAction;
 
@@ -459,6 +885,14 @@ pub static ACTION_MAP: Lazy<HashMap<String, Arc<dyn ShortcutAction>>> = Lazy::ne
     map.insert(
         "transcribe".to_string(),
         Arc::new(TranscribeAction) as Arc<dyn ShortcutAction>,
+    );
+    map.insert(
+        "transcribe_and_enhance".to_string(),
+        Arc::new(TranscribeEnhanceAction) as Arc<dyn ShortcutAction>,
+    );
+    map.insert(
+        "transcribe_and_generate".to_string(),
+        Arc::new(TranscribeGenerateAction) as Arc<dyn ShortcutAction>,
     );
     map.insert(
         "cancel".to_string(),

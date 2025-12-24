@@ -27,3 +27,7 @@ dist-ssr
 /target/
 recording_*
 .crush/
+
+# Environment variables
+.env
+src-tauri/.env

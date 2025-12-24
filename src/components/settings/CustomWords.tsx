@@ -61,7 +61,6 @@ export const CustomWords: React.FC<CustomWordsProps> = React.memo(
               onChange={(e) => setNewWord(e.target.value)}
               onKeyDown={handleKeyPress}
               placeholder={t("settings.advanced.customWords.placeholder")}
-              variant="compact"
               disabled={isUpdating("custom_words")}
             />
             <Button
@@ -72,8 +71,8 @@ export const CustomWords: React.FC<CustomWordsProps> = React.memo(
                 newWord.trim().length > 50 ||
                 isUpdating("custom_words")
               }
-              variant="primary"
-              size="md"
+              variant="secondary"
+              size="sm"
             >
               {t("settings.advanced.customWords.add")}
             </Button>
@@ -81,7 +80,7 @@ export const CustomWords: React.FC<CustomWordsProps> = React.memo(
         </SettingContainer>
         {customWords.length > 0 && (
           <div
-            className={`px-4 p-2 ${grouped ? "" : "rounded-lg border border-mid-gray/20"} flex flex-wrap gap-1`}
+            className={`px-4 p-2 ${grouped ? "" : "rounded-lg border border-mid-gray/20"} flex flex-wrap gap-2`}
           >
             {customWords.map((word) => (
               <Button

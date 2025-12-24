@@ -7,7 +7,7 @@ import {
   getTranslatedModelName,
   getTranslatedModelDescription,
 } from "../../lib/utils/modelTranslation";
-import Badge from "../ui/Badge";
+import { Badge } from "../ui/Badge";
 
 interface ModelCardProps {
   model: ModelInfo;
@@ -32,11 +32,11 @@ const ModelCard: React.FC<ModelCardProps> = ({
   const displayDescription = getTranslatedModelDescription(model, t);
 
   const baseButtonClasses =
-    "flex justify-between items-center rounded-xl p-3 px-4 text-left transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-logo-primary/25 active:scale-[0.98] cursor-pointer group";
+    "flex justify-between items-center rounded-xl p-3 px-4 text-left transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-primary/25 active:scale-[0.98] cursor-pointer group";
 
   const variantClasses = isFeatured
-    ? "border-2 border-logo-primary/25 bg-logo-primary/5 hover:border-logo-primary/40 hover:bg-logo-primary/8 hover:shadow-lg hover:scale-[1.02] disabled:hover:border-logo-primary/25 disabled:hover:bg-logo-primary/5 disabled:hover:shadow-none disabled:hover:scale-100"
-    : "border-2 border-mid-gray/20 hover:border-logo-primary/50 hover:bg-logo-primary/5 hover:shadow-lg hover:scale-[1.02] disabled:hover:border-mid-gray/20 disabled:hover:bg-transparent disabled:hover:shadow-none disabled:hover:scale-100";
+    ? "border-2 border-primary/25 bg-primary/5 hover:border-primary/40 hover:bg-primary/8 hover:shadow-lg hover:scale-[1.02] disabled:hover:border-primary/25 disabled:hover:bg-primary/5 disabled:hover:shadow-none disabled:hover:scale-100"
+    : "border-2 border-border hover:border-primary/50 hover:bg-primary/5 hover:shadow-lg hover:scale-[1.02] disabled:hover:border-border disabled:hover:bg-transparent disabled:hover:shadow-none disabled:hover:scale-100";
 
   return (
     <button
@@ -49,38 +49,38 @@ const ModelCard: React.FC<ModelCardProps> = ({
     >
       <div className="flex flex-col items-ce">
         <div className="flex items-center gap-4">
-          <h3 className="text-lg font-semibold text-text group-hover:text-logo-primary transition-colors">
+          <h3 className="text-lg font-semibold text-foreground group-hover:text-primary transition-colors">
             {displayName}
           </h3>
           <DownloadSize sizeMb={Number(model.size_mb)} />
           {isFeatured && (
-            <Badge variant="primary">{t("onboarding.recommended")}</Badge>
+            <Badge variant="default">{t("onboarding.recommended")}</Badge>
           )}
         </div>
-        <p className="text-text/60 text-sm leading-relaxed">
+        <p className="text-muted-foreground text-sm leading-relaxed">
           {displayDescription}
         </p>
       </div>
 
       <div className="space-y-1">
         <div className="flex items-center gap-2">
-          <p className="text-xs text-text/70 w-16 text-right">
+          <p className="text-xs text-muted-foreground w-16 text-right">
             {t("onboarding.modelCard.accuracy")}
           </p>
-          <div className="w-20 h-2 bg-mid-gray/20 rounded-full overflow-hidden">
+          <div className="w-20 h-2 bg-muted rounded-full overflow-hidden">
             <div
-              className="h-full bg-logo-primary rounded-full transition-all duration-300"
+              className="h-full bg-primary rounded-full transition-all duration-300"
               style={{ width: `${model.accuracy_score * 100}%` }}
             />
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <p className="text-xs text-text/70 w-16 text-right">
+          <p className="text-xs text-muted-foreground w-16 text-right">
             {t("onboarding.modelCard.speed")}
           </p>
-          <div className="w-20 h-2 bg-mid-gray/20 rounded-full overflow-hidden">
+          <div className="w-20 h-2 bg-muted rounded-full overflow-hidden">
             <div
-              className="h-full bg-logo-primary rounded-full transition-all duration-300"
+              className="h-full bg-primary rounded-full transition-all duration-300"
               style={{ width: `${model.speed_score * 100}%` }}
             />
           </div>
@@ -94,14 +94,14 @@ const DownloadSize = ({ sizeMb }: { sizeMb: number }) => {
   const { t } = useTranslation();
 
   return (
-    <div className="flex items-center gap-1.5 text-xs text-text/60 tabular-nums">
+    <div className="flex items-center gap-1.5 text-xs text-muted-foreground tabular-nums">
       <Download
         aria-hidden="true"
-        className="h-3.5 w-3.5 text-text/45"
+        className="h-3.5 w-3.5 text-muted-foreground/70"
         strokeWidth={1.75}
       />
       <span className="sr-only">{t("modelSelector.downloadSize")}</span>
-      <span className="font-medium text-text/70">
+      <span className="font-medium text-muted-foreground">
         {formatModelSize(sizeMb)}
       </span>
     </div>

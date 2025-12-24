@@ -493,13 +493,20 @@ pub const SETTINGS_STORE_PATH: &str = "settings_store.json";
 
 pub fn get_default_settings() -> AppSettings {
     #[cfg(target_os = "windows")]
-    let default_shortcut = "ctrl+space";
+    let (default_shortcut, default_enhance_shortcut, default_generate_shortcut) =
+        ("ctrl+space", "ctrl+e", "ctrl+g");
+
     #[cfg(target_os = "macos")]
-    let default_shortcut = "option+space";
+    let (default_shortcut, default_enhance_shortcut, default_generate_shortcut) =
+        ("option+space", "option+e", "option+g");
+
     #[cfg(target_os = "linux")]
-    let default_shortcut = "ctrl+space";
+    let (default_shortcut, default_enhance_shortcut, default_generate_shortcut) =
+        ("ctrl+space", "ctrl+e", "ctrl+g");
+
     #[cfg(not(any(target_os = "windows", target_os = "macos", target_os = "linux")))]
-    let default_shortcut = "alt+space";
+    let (default_shortcut, default_enhance_shortcut, default_generate_shortcut) =
+        ("ctrl+space", "ctrl+e", "ctrl+g");
 
     let mut bindings = HashMap::new();
     bindings.insert(
@@ -510,6 +517,26 @@ pub fn get_default_settings() -> AppSettings {
             description: "Converts your speech into text.".to_string(),
             default_binding: default_shortcut.to_string(),
             current_binding: default_shortcut.to_string(),
+        },
+    );
+    bindings.insert(
+        "transcribe_and_enhance".to_string(),
+        ShortcutBinding {
+            id: "transcribe_and_enhance".to_string(),
+            name: "Transcribe + Enhance".to_string(),
+            description: "Converts your speech into text and enhances it.".to_string(),
+            default_binding: default_enhance_shortcut.to_string(),
+            current_binding: default_enhance_shortcut.to_string(),
+        },
+    );
+    bindings.insert(
+        "transcribe_and_generate".to_string(),
+        ShortcutBinding {
+            id: "transcribe_and_generate".to_string(),
+            name: "Transcribe + Generate".to_string(),
+            description: "Generates content based on the transcription.".to_string(),
+            default_binding: default_generate_shortcut.to_string(),
+            current_binding: default_generate_shortcut.to_string(),
         },
     );
     bindings.insert(

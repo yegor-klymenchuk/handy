@@ -12,6 +12,7 @@ import { SettingContainer } from "../ui/SettingContainer";
 import { useSettings } from "../../hooks/useSettings";
 import { commands } from "@/bindings";
 import { toast } from "sonner";
+import { Button } from "../ui/Button";
 
 interface HandyShortcutProps {
   descriptionMode?: "inline" | "tooltip";
@@ -36,7 +37,7 @@ export const HandyShortcut: React.FC<HandyShortcutProps> = ({
   );
   const [originalBinding, setOriginalBinding] = useState<string>("");
   const [osType, setOsType] = useState<OSType>("unknown");
-  const shortcutRefs = useRef<Map<string, HTMLDivElement | null>>(new Map());
+  const shortcutRefs = useRef<Map<string, HTMLButtonElement | null>>(new Map());
 
   const bindings = getSetting("bindings") || {};
 
@@ -241,8 +242,29 @@ export const HandyShortcut: React.FC<HandyShortcutProps> = ({
     return formatKeyCombination(recordedKeys.join("+"), osType);
   };
 
+  // Render shortcut keys as Kbd components
+  const renderShortcutKeys = (shortcut: string) => {
+    const formattedKeys = formatKeyCombination(shortcut, osType);
+    const keys = formattedKeys.split("+");
+
+    return (
+      // <KbdGroup className="">
+        // <Kbd>
+          keys.map((key, index) => (
+            <React.Fragment key={index}>
+              {key.charAt(0).toUpperCase() + key.slice(1)}
+              {index < keys.length - 1 && (
+                <span>+</span>
+              )}
+            </React.Fragment>
+          ))
+        // </Kbd>
+      // </KbdGroup>
+    );
+  };
+
   // Store references to shortcut elements
-  const setShortcutRef = (id: string, ref: HTMLDivElement | null) => {
+  const setShortcutRef = (id: string, ref: HTMLButtonElement | null) => {
     shortcutRefs.current.set(id, ref);
   };
 
@@ -277,6 +299,8 @@ export const HandyShortcut: React.FC<HandyShortcutProps> = ({
       </SettingContainer>
     );
   }
+
+  console.log(bindings);
 
   const binding = bindings[shortcutId];
   if (!binding) {
@@ -313,21 +337,28 @@ export const HandyShortcut: React.FC<HandyShortcutProps> = ({
       disabled={disabled}
       layout="horizontal"
     >
-      <div className="flex items-center space-x-1">
+      <div className="flex items-center space-x-2">
         {editingShortcutId === shortcutId ? (
-          <div
+          <Button
+            variant="outline"
             ref={(ref) => setShortcutRef(shortcutId, ref)}
-            className="px-2 py-1 text-sm font-semibold border border-logo-primary bg-logo-primary/30 rounded min-w-[120px] text-center"
-          >
-            {formatCurrentKeys()}
-          </div>
-        ) : (
-          <div
-            className="px-2 py-1 text-sm font-semibold bg-mid-gray/10 border border-mid-gray/80 hover:bg-logo-primary/10 rounded cursor-pointer hover:border-logo-primary"
             onClick={() => startRecording(shortcutId)}
+            className="font-normal"
+            size="sm"
           >
-            {formatKeyCombination(binding.current_binding, osType)}
-          </div>
+            {recordedKeys.length === 0
+              ? formatCurrentKeys()
+              : renderShortcutKeys(recordedKeys.join("+"))}
+          </Button>
+        ) : (
+          <Button
+            variant="outline"
+            onClick={() => startRecording(shortcutId)}
+            className="font-normal"
+            size="sm"
+          >
+            {renderShortcutKeys(binding.current_binding)}
+          </Button>
         )}
         <ResetButton
           onClick={() => resetBinding(shortcutId)}

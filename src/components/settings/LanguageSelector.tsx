@@ -1,11 +1,23 @@
-import React, { useState, useRef, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { listen } from "@tauri-apps/api/event";
+import { Check, ChevronsUpDown } from "lucide-react";
+import { Button } from "../ui/Button";
+import { Popover, PopoverContent, PopoverTrigger } from "../ui/Popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "../ui/Command";
 import { SettingContainer } from "../ui/SettingContainer";
 import { ResetButton } from "../ui/ResetButton";
 import { useSettings } from "../../hooks/useSettings";
 import { useModels } from "../../hooks/useModels";
 import { LANGUAGES } from "../../lib/constants/languages";
+import { cn } from "@/lib/utils/cn";
 
 interface LanguageSelectorProps {
   descriptionMode?: "inline" | "tooltip";
@@ -21,30 +33,12 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
   const { t } = useTranslation();
   const { getSetting, updateSetting, resetSetting, isUpdating } = useSettings();
   const { currentModel, loadCurrentModel } = useModels();
+
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const dropdownRef = useRef<HTMLDivElement>(null);
-  const searchInputRef = useRef<HTMLInputElement>(null);
 
   const selectedLanguage = getSetting("selected_language") || "auto";
   const isUnsupported = unsupportedModels.includes(currentModel);
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(event.target as Node)
-      ) {
-        setIsOpen(false);
-        setSearchQuery("");
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, []);
 
   // Listen for model state changes to update UI reactively
   useEffect(() => {
@@ -57,11 +51,19 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
     };
   }, [loadCurrentModel]);
 
-  useEffect(() => {
-    if (isOpen && searchInputRef.current) {
-      searchInputRef.current.focus();
-    }
-  }, [isOpen]);
+  const selectedLanguageName = isUnsupported
+    ? t("settings.general.language.auto")
+    : LANGUAGES.find((lang) => lang.value === selectedLanguage)?.label ||
+      t("settings.general.language.auto");
+
+  const handleLanguageSelect = async (languageCode: string) => {
+    await updateSetting("selected_language", languageCode);
+    setIsOpen(false);
+  };
+
+  const handleReset = async () => {
+    await resetSetting("selected_language");
+  };
 
   const filteredLanguages = useMemo(
     () =>
@@ -71,39 +73,7 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
     [searchQuery],
   );
 
-  const selectedLanguageName = isUnsupported
-    ? t("settings.general.language.auto")
-    : LANGUAGES.find((lang) => lang.value === selectedLanguage)?.label ||
-      t("settings.general.language.auto");
-
-  const handleLanguageSelect = async (languageCode: string) => {
-    await updateSetting("selected_language", languageCode);
-    setIsOpen(false);
-    setSearchQuery("");
-  };
-
-  const handleReset = async () => {
-    await resetSetting("selected_language");
-  };
-
-  const handleToggle = () => {
-    if (isUpdating("selected_language") || isUnsupported) return;
-    setIsOpen(!isOpen);
-  };
-
-  const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchQuery(event.target.value);
-  };
-
-  const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
-    if (event.key === "Enter" && filteredLanguages.length > 0) {
-      // Select first filtered language on Enter
-      handleLanguageSelect(filteredLanguages[0].value);
-    } else if (event.key === "Escape") {
-      setIsOpen(false);
-      setSearchQuery("");
-    }
-  };
+  const isDisabled = isUpdating("selected_language") || isUnsupported;
 
   return (
     <SettingContainer
@@ -117,88 +87,60 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
       grouped={grouped}
       disabled={isUnsupported}
     >
-      <div className="flex items-center space-x-1">
-        <div className="relative" ref={dropdownRef}>
-          <button
-            type="button"
-            className={`px-2 py-1 text-sm font-semibold bg-mid-gray/10 border border-mid-gray/80 rounded min-w-[200px] text-left flex items-center justify-between transition-all duration-150 ${
-              isUpdating("selected_language") || isUnsupported
-                ? "opacity-50 cursor-not-allowed"
-                : "hover:bg-logo-primary/10 cursor-pointer hover:border-logo-primary"
-            }`}
-            onClick={handleToggle}
-            disabled={isUpdating("selected_language") || isUnsupported}
-          >
-            <span className="truncate">{selectedLanguageName}</span>
-            <svg
-              className={`w-4 h-4 ml-2 transition-transform duration-200 ${
-                isOpen ? "transform rotate-180" : ""
-              }`}
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
+      <div className="flex items-center space-x-2">
+        <Popover open={isOpen} onOpenChange={setIsOpen}>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              role="combobox"
+              aria-expanded={isOpen}
+              disabled={isDisabled}
+              className="min-w-[200px] justify-between"
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M19 9l-7 7-7-7"
+              <span className="truncate">{selectedLanguageName}</span>
+              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-[200px] p-0" align="start">
+            <Command shouldFilter={false}>
+              <CommandInput
+                value={searchQuery}
+                onValueChange={(value) => setSearchQuery(value)}
+                placeholder={t("settings.general.language.searchPlaceholder")}
               />
-            </svg>
-          </button>
-
-          {isOpen && !isUpdating("selected_language") && !isUnsupported && (
-            <div className="absolute top-full left-0 right-0 mt-1 bg-background border border-mid-gray/80 rounded shadow-lg z-50 max-h-60 overflow-hidden">
-              {/* Search input */}
-              <div className="p-2 border-b border-mid-gray/80">
-                <input
-                  ref={searchInputRef}
-                  type="text"
-                  value={searchQuery}
-                  onChange={handleSearchChange}
-                  onKeyDown={handleKeyDown}
-                  placeholder={t("settings.general.language.searchPlaceholder")}
-                  className="w-full px-2 py-1 text-sm bg-mid-gray/10 border border-mid-gray/40 rounded focus:outline-none focus:ring-1 focus:ring-logo-primary focus:border-logo-primary"
-                />
-              </div>
-
-              <div className="max-h-48 overflow-y-auto">
-                {filteredLanguages.length === 0 ? (
-                  <div className="px-2 py-2 text-sm text-mid-gray text-center">
-                    {t("settings.general.language.noResults")}
-                  </div>
-                ) : (
-                  filteredLanguages.map((language) => (
-                    <button
+              <CommandList>
+                <CommandEmpty>
+                  {t("settings.general.language.noResults")}
+                </CommandEmpty>
+                <CommandGroup>
+                  {filteredLanguages.map((language) => (
+                    <CommandItem
                       key={language.value}
-                      type="button"
-                      className={`w-full px-2 py-1 text-sm text-left hover:bg-logo-primary/10 transition-colors duration-150 ${
-                        selectedLanguage === language.value
-                          ? "bg-logo-primary/20 text-logo-primary font-semibold"
-                          : ""
-                      }`}
-                      onClick={() => handleLanguageSelect(language.value)}
+                      value={language.value}
+                      onSelect={(currentValue) => {
+                        handleLanguageSelect(currentValue);
+                      }}
                     >
-                      <div className="flex items-center justify-between">
-                        <span className="truncate">{language.label}</span>
-                      </div>
-                    </button>
-                  ))
-                )}
-              </div>
-            </div>
-          )}
+                      {language.label}
+                      <Check
+                        className={cn(
+                          "ml-auto h-4 w-4",
+                          selectedLanguage === language.value
+                            ? "opacity-100"
+                            : "opacity-0",
+                        )}
+                      />
+                    </CommandItem>
+                  ))}
+                </CommandGroup>
+              </CommandList>
+            </Command>
+          </PopoverContent>
+        </Popover>
+        <div>
+          <ResetButton onClick={handleReset} disabled={isDisabled} />
         </div>
-        <ResetButton
-          onClick={handleReset}
-          disabled={isUpdating("selected_language") || isUnsupported}
-        />
       </div>
-      {isUpdating("selected_language") && (
-        <div className="absolute inset-0 bg-mid-gray/10 rounded flex items-center justify-center">
-          <div className="w-4 h-4 border-2 border-logo-primary border-t-transparent rounded-full animate-spin"></div>
-        </div>
-      )}
     </SettingContainer>
   );
 };

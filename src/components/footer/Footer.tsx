@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { getVersion } from "@tauri-apps/api/app";
 
-import ModelSelector from "../model-selector";
+import ModelSelector from "../model-selector/ModelSelector";
 import UpdateChecker from "../update-checker";
 
 const Footer: React.FC = () => {
