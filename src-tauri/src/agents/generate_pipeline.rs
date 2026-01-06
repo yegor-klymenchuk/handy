@@ -4,7 +4,7 @@ use super::translator::Translator;
 use anyhow::Result;
 use log::{debug, error, info};
 use rig::providers::openai::Client;
-use std::env;
+use crate::helpers::env::ENV;
 use tauri::AppHandle;
 
 /// Result of the generation pipeline
@@ -37,10 +37,7 @@ impl GeneratePipeline {
 
     /// Create pipeline from environment variable
     pub fn from_env() -> Result<Self> {
-        let api_key = env::var("OPENAI_API_KEY")
-            .map_err(|_| anyhow::anyhow!("OPENAI_API_KEY environment variable not set"))?;
-
-        Ok(Self::new(&api_key))
+        Ok(Self::new(&ENV.openai_api_key))
     }
 
     /// Process text through generation pipeline with overlay updates

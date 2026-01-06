@@ -603,6 +603,9 @@ async getSession(token: string) : Promise<Result<SessionResponse, string>> {
     else return { status: "error", error: e  as any };
 }
 },
+async getEnv(name: string) : Promise<string> {
+    return await TAURI_INVOKE("get_env", { name });
+},
 /**
  * Checks if the Mac is a laptop by detecting battery presence
  * 

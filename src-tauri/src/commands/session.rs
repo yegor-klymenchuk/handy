@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 use specta::Type;
-use std::env;
+use crate::helpers::env::ENV;
 
 #[derive(Debug, Serialize, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
@@ -34,9 +34,7 @@ pub struct SessionResponse {
 #[tauri::command]
 #[specta::specta]
 pub async fn get_session(token: String) -> Result<SessionResponse, String> {
-    let api_url = env::var("API_URL").map_err(|e| format!("API_URL not set: {}", e))?;
-
-    log::info!("Fetching session from: {}", api_url);
+    log::info!("Fetching session from: {}", ENV.api_url);
 
     let client = reqwest::Client::builder()
         .danger_accept_invalid_certs(true)
@@ -44,7 +42,7 @@ pub async fn get_session(token: String) -> Result<SessionResponse, String> {
         .map_err(|e| format!("Failed to create HTTP client: {}", e))?;
 
     let response = client
-        .get(format!("{}/api/session", api_url))
+        .get(format!("{}/api/session", ENV.api_url))
         .header("Authorization", format!("Bearer {}", token))
         .send()
         .await

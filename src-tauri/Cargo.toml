@@ -74,9 +74,9 @@ specta-typescript = "0.0.9"
 tauri-specta = { version = "=2.0.0-rc.21", features = ["derive", "typescript"] }
 rig-core = "0.5.0"
 schemars = "0.8"
-dotenvy = "0.15"
 tauri-plugin-deep-link = "2"
 tauri-plugin-shell = "2"
+dotenv = "0.15.0"
 
 [target.'cfg(unix)'.dependencies]
 signal-hook = "0.3"

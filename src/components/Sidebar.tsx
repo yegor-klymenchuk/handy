@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   Cog,
@@ -34,6 +34,7 @@ import { Avatar, AvatarImage, AvatarFallback } from "./ui/Avatar";
 import { getInitials } from "@/lib/utils/getInitials";
 import { Button } from "./ui/Button";
 import { useAuth } from "@/hooks/useAuth";
+import { invoke } from "@tauri-apps/api/core";
 
 export type SidebarSection = keyof typeof SECTIONS_CONFIG;
 
@@ -116,6 +117,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
     .filter(([id, config]) => id !== "profile" && config.enabled(settings))
     .map(([id, config]) => ({ id: id as SidebarSection, ...config }));
 
+  const [apiUrl, setApiUrl] = useState<string>("");
+
+  useEffect(() => {
+    invoke<string>("get_env", { name: "API_URL" }).then((url) => {
+      setApiUrl(url);
+    });
+  }, []);
+
   return (
     <SidebarUI
       collapsible="none"
@@ -166,7 +175,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     {session?.user.name ? getInitials(session?.user.name) : "?"}
                   </AvatarFallback>
                 </Avatar>
-                <span className="font-medium truncate">{session?.user.name}</span>
+                <span className="font-medium truncate">
+                  {session?.user.name}
+                </span>
               </SidebarMenuButton>
             ) : (
               <Button className="w-full gap-3" onClick={signIn}>

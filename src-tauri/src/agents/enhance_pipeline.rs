@@ -1,10 +1,10 @@
 use super::intent_classifier::TranslationDetector;
 use super::prompt_enhancer::PromptEnhancer;
 use super::translator::Translator;
+use crate::helpers::env::ENV;
 use anyhow::Result;
 use log::{debug, error, info};
 use rig::providers::openai::Client;
-use std::env;
 use tauri::AppHandle;
 
 /// Result of the enhancement pipeline
@@ -37,10 +37,7 @@ impl EnhancePipeline {
 
     /// Create pipeline from environment variable
     pub fn from_env() -> Result<Self> {
-        let api_key = env::var("OPENAI_API_KEY")
-            .map_err(|_| anyhow::anyhow!("OPENAI_API_KEY environment variable not set"))?;
-
-        Ok(Self::new(&api_key))
+        Ok(Self::new(&ENV.openai_api_key))
     }
 
     /// Process text through enhancement pipeline with overlay updates

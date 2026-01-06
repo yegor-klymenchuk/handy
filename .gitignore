@@ -30,4 +30,3 @@ recording_*
 
 # Environment variables
 .env
-src-tauri/.env
