@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import { InseroIcon } from "./icons/InseroIcon";
 import { useSettings } from "../hooks/useSettings";
-import { useUser } from "../hooks/useUser";
+import { useSession } from "../hooks/useSession";
 import {
   GeneralSettings,
   AdvancedSettings,
@@ -109,14 +109,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const { t } = useTranslation();
 
   const { signIn } = useAuth();
-  const { data: user } = useUser();
+  const { data: session } = useSession();
   const { settings } = useSettings();
 
   const availableSections = Object.entries(SECTIONS_CONFIG)
     .filter(([id, config]) => id !== "profile" && config.enabled(settings))
     .map(([id, config]) => ({ id: id as SidebarSection, ...config }));
-
-  console.log(user);
 
   return (
     <SidebarUI
@@ -153,22 +151,22 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <SidebarSeparator className="mb-2" />
         <SidebarMenu>
           <SidebarMenuItem>
-            {user ? (
+            {session?.user ? (
               <SidebarMenuButton
                 onClick={() => onSectionChange("profile")}
-                title={user.name}
+                title={session?.user.name}
                 className="h-10"
               >
                 <Avatar className="w-8 h-8">
                   <AvatarImage
-                    src={user?.image || ""}
-                    alt={user.name || "User avatar"}
+                    src={session?.user.image || ""}
+                    alt={session?.user.name || "User avatar"}
                   />
                   <AvatarFallback className="text-xs font-medium bg-primary/10 text-primary">
-                    {user.name ? getInitials(user.name) : "?"}
+                    {session?.user.name ? getInitials(session?.user.name) : "?"}
                   </AvatarFallback>
                 </Avatar>
-                <span className="font-medium truncate">{user.name}</span>
+                <span className="font-medium truncate">{session?.user.name}</span>
               </SidebarMenuButton>
             ) : (
               <Button className="w-full gap-3" onClick={signIn}>

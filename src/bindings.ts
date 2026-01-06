@@ -595,6 +595,14 @@ async updateRecordingRetentionPeriod(period: string) : Promise<Result<null, stri
     else return { status: "error", error: e  as any };
 }
 },
+async getSession(token: string) : Promise<Result<SessionResponse, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_session", { token }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
 /**
  * Checks if the Mac is a laptop by detecting battery presence
  * 
@@ -637,8 +645,11 @@ export type OverlayPosition = "none" | "top" | "bottom"
 export type PasteMethod = "ctrl_v" | "direct" | "none" | "shift_insert" | "ctrl_shift_v"
 export type PostProcessProvider = { id: string; label: string; base_url: string }
 export type RecordingRetentionPeriod = "never" | "preserve_limit" | "days_3" | "weeks_2" | "months_3"
+export type Session = { id: string; expiresAt: string; token: string; createdAt: string; updatedAt: string; userId: string }
+export type SessionResponse = { session: Session; user: User }
 export type ShortcutBinding = { id: string; name: string; description: string; default_binding: string; current_binding: string }
 export type SoundTheme = "marimba" | "pop" | "custom"
+export type User = { id: string; name: string; email: string; image: string | null; emailVerified: boolean; createdAt: string; updatedAt: string }
 
 /** tauri-specta globals **/
 

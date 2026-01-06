@@ -243,6 +243,7 @@ jobs:
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          API_URL: ${{ secrets.API_URL }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           VITE_PUBLIC_API_URL: ${{ secrets.VITE_PUBLIC_API_URL }}
           APPLE_ID: ${{ secrets.APPLE_ID }}
@@ -271,6 +272,7 @@ jobs:
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          API_URL: ${{ secrets.API_URL }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           VITE_PUBLIC_API_URL: ${{ secrets.VITE_PUBLIC_API_URL }}
           WHISPER_NO_AVX: ${{ contains(inputs.platform, 'ubuntu') && 'ON' || '' }}
